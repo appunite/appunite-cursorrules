@@ -1,0 +1,204 @@
+---
+description: 
+globs: *.ex
+alwaysApply: false
+---
+# Elixir: `use` vs `import` - Phoenix LiveView & Components
+
+## Core Difference
+
+| Macro | Purpose | Effect | When to Use |
+|-------|---------|--------|-------------|
+| `import` | Brings functions/macros into namespace | Call functions without module prefix | Use specific functions frequently |
+| `use` | Invokes `__using__/1` macro | Injects code, setup, and behaviors | Adopt behaviors or module patterns |
+
+## Phoenix LiveView Modules
+
+### ✅ DO: Use `use Phoenix.LiveView`
+```elixir
+defmodule MyAppWeb.PageLive do
+  use Phoenix.LiveView  # ✅ Correct - injects LiveView behavior
+  
+  def mount(_params, _session, socket) do
+    {:ok, assign(socket, :count, 0)}
+  end
+  
+  def render(assigns) do
+    ~H"""
+    <div>Count: <%= @count %></div>
+    """
+  end
+end
+```
+
+### ❌ DON'T: Import Phoenix.LiveView
+```elixir
+defmodule MyAppWeb.PageLive do
+  import Phoenix.LiveView  # ❌ Wrong - doesn't set up LiveView behavior
+  
+  # This won't work properly - missing LiveView setup
+end
+```
+
+**Why `use`?** Phoenix.LiveView provides a `__using__/1` macro that:
+- Sets up the module as a LiveView
+- Imports necessary functions (`assign/3`, `push_navigate/2`, etc.)
+- Enables LiveView callbacks (`mount/3`, `handle_event/3`)
+- Configures HEEx template rendering
+
+## Phoenix Components
+
+### ✅ DO: Use `use Phoenix.Component`
+```elixir
+defmodule MyAppWeb.MyComponent do
+  use Phoenix.Component  # ✅ Correct - sets up component behavior
+  
+  def my_component(assigns) do
+    ~H"""
+    <div>Hello, <%= @name %>!</div>
+    """
+  end
+end
+```
+
+### ❌ DON'T: Import Phoenix.Component
+```elixir
+defmodule MyAppWeb.MyComponent do
+  import Phoenix.Component  # ❌ Wrong - missing component setup
+  
+  # Component won't work properly without use
+end
+```
+
+**Why `use`?** Phoenix.Component provides a `__using__/1` macro that:
+- Sets up the module for function components
+- Imports component helpers and macros
+- Configures HEEx template compilation
+- Enables component attribute validation
+
+## Plug.Conn - Exception to the Rule
+
+### ✅ DO: Import Plug.Conn (No `use` available)
+```elixir
+defmodule MyAppWeb.MyPlug do
+  import Plug.Conn  # ✅ Correct - Plug.Conn has no __using__/1 macro
+  
+  def call(conn, _opts) do
+    conn
+    |> assign(:user_id, 123)
+    |> put_resp_header("x-custom-header", "value")
+  end
+end
+```
+
+### ❌ DON'T: Use `use Plug.Conn`
+```elixir
+defmodule MyAppWeb.MyPlug do
+  use Plug.Conn  # ❌ Error - Plug.Conn doesn't provide __using__/1
+end
+```
+
+**Why `import`?** Plug.Conn:
+- Does NOT provide a `__using__/1` macro
+- Only provides functions for working with connection structs
+- Use `import` to call functions without `Plug.Conn.` prefix
+
+## Common Phoenix Patterns
+
+### LiveView Module Setup
+```elixir
+defmodule MyAppWeb.SomeLive do
+  use MyAppWeb, :live_view        # ✅ Sets up LiveView + app-specific helpers
+  # OR
+  use Phoenix.LiveView            # ✅ Basic LiveView setup
+  
+  import Plug.Conn, only: [put_session: 3]  # ✅ Import specific functions
+  
+  alias MyApp.Accounts
+  alias MyApp.Accounts.User
+end
+```
+
+### Component Module Setup
+```elixir
+defmodule MyAppWeb.CoreComponents do
+  use Phoenix.Component        # ✅ Sets up component behavior
+  
+  import Phoenix.HTML.Form     # ✅ Import form helpers if needed
+  
+  alias Phoenix.LiveView.JS
+end
+```
+
+### Controller Setup
+```elixir
+defmodule MyAppWeb.PageController do
+  use MyAppWeb, :controller    # ✅ Sets up controller behavior
+  # OR
+  use Phoenix.Controller       # ✅ Basic controller setup
+  
+  import Plug.Conn            # ✅ Import connection functions
+end
+```
+
+## Quick Decision Guide
+
+**Ask yourself:**
+1. **Does the module provide a `__using__/1` macro?**
+   - Yes → Use `use ModuleName`
+   - No → Use `import ModuleName`
+
+2. **Do I want to adopt a behavior/pattern?**
+   - Yes → Use `use` (LiveView, Component, Controller, Schema)
+   - No → Use `import` for specific functions
+
+3. **Am I setting up a module type?**
+   - Yes → Use `use` (almost always)
+   - No → Use `import` for utilities
+
+## Common Modules Reference
+
+| Module | Use `use` | Use `import` | Notes |
+|--------|-----------|--------------|-------|
+| `Phoenix.LiveView` | ✅ | ❌ | Sets up LiveView behavior |
+| `Phoenix.Component` | ✅ | ❌ | Sets up component behavior |
+| `Phoenix.Controller` | ✅ | ❌ | Sets up controller behavior |
+| `Ecto.Schema` | ✅ | ❌ | Sets up schema behavior |
+| `Plug.Conn` | ❌ | ✅ | No `__using__/1` macro |
+| `Enum` | ❌ | ✅ | Utility functions only |
+| `Logger` | ❌ | ✅ | Utility functions only |
+
+## Anti-Patterns to Avoid
+
+❌ **Don't mix `use` and `import` for the same module:**
+```elixir
+defmodule MyLive do
+  use Phoenix.LiveView      # ✅ Correct
+  import Phoenix.LiveView   # ❌ Redundant and confusing
+end
+```
+
+❌ **Don't `use` modules without `__using__/1`:**
+```elixir
+defmodule MyModule do
+  use Enum  # ❌ Error - Enum has no __using__/1 macro
+end
+```
+
+❌ **Don't `import` when you need behavior setup:**
+```elixir
+defmodule MyLive do
+  import Phoenix.LiveView  # ❌ Won't work - missing LiveView setup
+  
+  def mount(_params, _session, socket) do
+    # This won't work without `use Phoenix.LiveView`
+  end
+end
+```
+
+## Memory Aid
+
+- **`use`** = "I want to **become** this type of module"
+- **`import`** = "I want to **borrow** functions from this module"
+
+Remember: When in doubt, check if the module has a `__using__/1` macro in its documentation. If yes, use `use`. If no, use `import`.

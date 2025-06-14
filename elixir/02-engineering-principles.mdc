@@ -1,0 +1,244 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Engineering Principles
+
+## 1. Fundamental Principles
+
+**Rationale**: Establishes the foundational rules that govern all work, preventing scope creep, enforcing accountability, and ensuring the integrity of the development process.
+
+### 1.1 Core Principles
+
+**Rationale**: Lists the essential guiding principles for all work, such as task-driven development, user authority, and prohibition of unapproved changes.
+
+1. **Task-Driven Development**: No code shall be changed in the codebase unless there is an agreed-upon task explicitly authorising that change.
+
+2. **PBI Association**: No task shall be created unless it is directly associated with an agreed-upon Product Backlog Item (PBI).
+
+3. **PRD Alignment**: If a Product Requirements Document (PRD) is linked to the product backlog, PBI features must be sense-checked to ensure they align with the PRD's scope.
+
+4. **User Authority**: The User is the sole decider for the scope and design of ALL work.
+
+5. **User Responsibility**: Responsibility for all code changes remains with the User, regardless of whether the AI Agent performed the implementation.
+
+6. **Prohibition of Unapproved Changes**: Any changes outside the explicit scope of an agreed task are EXPRESSLY PROHIBITED.
+
+7. **Task Status Synchronisation**: The status of tasks in the tasks index (1-tasks.md) must always match the status in the individual task file. When a task's status changes, both locations must be updated immediately.
+
+8. **Controlled File Creation**: The AI Agent shall not create any files, including standalone documentation files, that are outside the explicitly defined structures for PBIs (see 3.6), tasks (see 4.3), or source code, unless the User has given explicit prior confirmation for the creation of each specific file. This principle is to prevent the generation of unrequested or unmanaged documents.
+
+9. **External Package Research and Documentation**: For any proposed tasks that involve external packages, to avoid hallucinations, use the web to research the documentation first to ensure it's 100% clear how to use the API of the package. Then for each package, a document should be created `<task id>-<package>-guide.md` that contains a fresh cache of the information needed to use the API. It should be date-stamped and link to the original docs provided.
+   
+   **Example**: If `oban` is a library to add as part of task 2-1 then a file `.notes/tasks/2-1-oban-guide.md` should be created. This documents foundational assumptions about how to use the package, with example snippets, in Elixir for the project.
+
+10. **Task Granularity**: Tasks must be defined to be as small as practicable while still representing a cohesive, testable unit of work. Large or complex features should be broken down into multiple smaller tasks.
+
+11. **Don't Repeat Yourself (DRY)**: Information should be defined in a single location and referenced elsewhere to avoid duplication and reduce the risk of inconsistencies. Specifically:
+    • Task information should be fully detailed in their dedicated task files and only referenced from other documents.
+    • PBI documents should reference the task list rather than duplicating task details.
+    • The only exception to this rule is for titles or names (e.g., task names in lists).
+    • Any documentation that needs to exist in multiple places should be maintained in a single source of truth and referenced elsewhere.
+
+12. **Use of Constants for Repeated or Special Values**: Any value (number, string, etc.) used more than once in generated code—especially "magic numbers" or values with special significance—must be defined as a named constant.
+    
+    **Example**: Instead of:
+    ```elixir
+    # ❌ DON'T: Magic numbers
+    Enum.take(websites, 10)
+    Enum.chunk_every(items, 10)
+    ```
+    
+    Define constants and use them:
+    ```elixir
+    # ✅ DO: Named constants
+    @max_websites 10
+    @batch_size 10
+    
+    Enum.take(websites, @max_websites)
+    Enum.chunk_every(items, @batch_size)
+    ```
+    
+    • All subsequent uses must reference the constant, not the literal value.
+    • This applies to all code generation, automation, and manual implementation within the project.
+
+13. **Technical Documentation for APIs and Interfaces**: As part of completing any PBI that creates or modifies APIs, services, or interfaces, technical documentation must be created or updated explaining how to use these components. This documentation should include:
+    • API usage examples and patterns
+    • Interface contracts and expected behaviors  
+    • Integration guidelines for other developers
+    • Configuration options and defaults
+    • Error handling and troubleshooting guidance
+    • The documentation must be created in the appropriate location (e.g., `.notes/technical/` or inline code documentation) and linked from the PBI detail
+
+## 2. Core Engineering Principles
+
+- **Domain-Driven Design**: Organize code around business domains, not technical layers.
+- **Functional Core, Imperative Shell**: Keep domain logic in pure functions, with side effects at the boundaries of the system.
+- **Elegant & Simple Architecture**:
+    - **KISS Principle**: Keep solutions simple and straightforward.
+    - **YAGNI**: "You Aren't Gonna Need It" - don't build for hypothetical future requirements.
+- **Composition over Complexity**: Build complex behavior from small, simple, composable parts.
+- **Single Responsibility**: Each module or function should have one clear purpose.
+- **Explicit Over Implicit**: Prefer clarity and explicitness over "magic" that hides complexity.
+- **Fail Fast**: Detect and handle errors as early as possible.
+- **Easy to Change**: Design for maintainability and future adaptation.
+- **Start simple**: Begin with the most straightforward solution that works, and refactor only when real-world complexity requires it.
+
+## 3. Elixir & Phoenix Project Structure
+
+- **Context-Based Organization**: Use Phoenix contexts to define domain boundaries and group related functionality.
+  ```
+  lib/my_app/
+    accounts/     # User management domain
+    billing/      # Payment processing domain
+    catalog/      # Product catalog domain
+  ```
+- **API/Implementation Separation**: Use public API modules that delegate to private implementation modules to create clear boundaries.
+- **Boundary Enforcement**: Use tools like `NimbleOptions` to validate inputs at context boundaries.
+- **Clear Data Flow**: Structure logic with clear Input → Transform → Output patterns.
+
+## 4. Coding & Functional Programming Patterns
+
+- **Pattern Matching**: Use pattern matching extensively in function heads for control flow and destructuring.
+- **Pipe Operator**: Use the pipe operator `|>` for clear, readable data transformation chains: `data |> transform() |> validate()`.
+- **`with` Statements**: Use `with` for Railway-Oriented Programming to handle complex operations with multiple steps that can fail, creating a "happy path" flow.
+- **Result Tuples**: Functions that can fail should return tagged tuples like `{:ok, result}` or `{:error, reason}`.
+- **Guard Clauses**: Use guard clauses in function definitions to enforce preconditions.
+- **Immutable Data Transformations**: Always return new data structures instead of mutating existing ones (e.g., use `Map.put`, `Keyword.put`).
+- **Data Validation with Changesets**: Use `Ecto.Changeset` to validate data at your application's boundaries, even when not interacting with a database.
+
+## 5. Elixir Process & Concurrency Design
+
+- **GenServer for State**: Use `GenServer`s only when you explicitly need to manage stateful processes. Most logic should be in pure functions.
+- **Supervision Trees**: Design robust supervision hierarchies to handle failures and ensure application stability.
+- **Task.Supervisor**: Use `Task.Supervisor` for concurrent, potentially-failing operations that don't need to be long-lived processes.
+- **Registry for Process Discovery**: Use `Registry` for dynamic process lookup by name.
+- **"Let It Crash" Philosophy**: Embrace OTP principles by designing processes to crash independently and be restarted by their supervisors.
+
+## 6. Error Handling
+
+- **Prefer Explicit Error Handling**: Use `case` statements and `with` expressions to handle success and failure paths explicitly.
+```elixir
+# Using case for a single operation
+case Repo.insert(changeset) do
+  {:ok, record} -> {:ok, record}
+  {:error, changeset} -> {:error, changeset}
+end
+
+# Using with for a sequence of operations
+with {:ok, user} <- get_user(id),
+     {:ok, thread} <- create_thread(user, params),
+     {:ok, message} <- create_message(thread, content) do
+  {:ok, {thread, message}}
+else
+  {:error, reason} -> {:error, reason}
+end
+```
+
+## 7. Phoenix Framework Best Practices
+
+- **LiveView-First**: Use Phoenix LiveView as the primary technology for building user interfaces.
+- **Function Components**: Use function components for creating reusable UI elements.
+- **PubSub for Real-time**: Leverage Phoenix PubSub for broadcasting real-time events and updates.
+- **Thin Controllers & LiveViews**: Keep controllers and LiveViews thin. Their role is to handle HTTP requests and delegate business logic to context modules.
+- **Security First**: Always consider security implications (CSRF, XSS, etc.).
+
+## 8. Testing Strategy
+
+- **Test Public APIs**: Focus tests on the public functions of your context modules.
+- **Test Isolation**: Each test should be independent and self-contained.
+- **Arrange-Act-Assert**: Structure tests with clear setup, action, and verification phases.
+- **Test Readability**: Write tests that are clear and serve as living documentation for your code.
+- **Test Coverage**:
+    - **Unit tests** for pure functions and business logic.
+    - **Integration tests** for database contexts and external services.
+    - **Controller/LiveView tests** for web endpoints and user interaction flows.
+- **Elixir-Specific Tooling**:
+    - **ExUnit**: The default framework for testing.
+    - **Mox**: Use for mocking external dependencies and defining explicit contracts.
+    - **ExMachina**: Use for creating test data via factories.
+    - **StreamData**: Use for property-based testing to verify code against a wide range of inputs.
+
+## 9. HTTP and API Integration
+
+- **Use `Req` for HTTP Clients**: Prefer the `Req` library for making external HTTP requests.
+- **Define Behaviours for API Clients**: Define explicit behaviours for API clients to allow for easy testing and mocking.
+- **Robust Error Handling**: Handle network failures, timeouts, and unexpected API responses gracefully.
+- **Use Circuit Breakers**: Use circuit breakers (e.g., `Fuse`) for critical external services to prevent cascading failures.
+
+## 10. Naming Conventions
+
+- **Module Names**: `PascalCase` (e.g., `Holocron.Accounts`).
+- **Function Names**: `snake_case` and verb-first (e.g., `create_user/2`, not `user_create/2`).
+- **Variables**: `snake_case` (e.g., `thread_id`, `user_params`).
+- **Database Tables**: `snake_case` and plural (e.g., `threads`, `messages`).
+- **Constants**: `@module_attribute` for compile-time constants.
+- **Intention-Revealing Names**: Choose names that clearly describe intent, not implementation details.
+
+## 11. Code Quality & Documentation
+
+### 11.1 Documentation
+- **`@moduledoc`**: Provide a `moduledoc` for every public module explaining its purpose and responsibility.
+- **`@doc`**: Add a `doc` for all public functions describing what they do.
+- **`@spec`**: Add `@spec` typespecs to all public functions for static analysis and clarity.
+- **Examples**: Include runnable examples in your documentation using `doctest`.
+- **README Updates**: Keep the main `README.md` updated with setup instructions and architectural overviews.
+
+### 11.2 Code Review & Static Analysis
+- **Use `mix format`**: Ensure all code is formatted consistently before committing.
+- **Use Static Analysis**: Regularly run `credo` and `dialyzer` to catch issues early.
+- **Code Review Checklist**:
+    - [ ] Does this solve the problem simply?
+    - [ ] Are there any side effects or breaking changes?
+    - [ ] Is error handling comprehensive?
+    - [ ] Are tests included and comprehensive?
+    - [ ] Is documentation updated and complete?
+    - [ ] Does this follow project conventions and best practices?
+
+## 12. Performance Considerations
+
+- **Database Queries**: Write efficient queries and avoid N+1 problems by using Ecto's preloading and joins. Index columns that are frequently used in `where` clauses.
+- **Memory Usage**: Be mindful of large data structures and processing large datasets.
+- **Background Jobs**: Use a background job library like `Oban` for long-running or resource-intensive tasks.
+- **Caching**: Apply strategic caching where appropriate, but measure the impact to ensure it's a net benefit.
+- **Measure Before Optimizing**: Don't prematurely optimize. Use profiling tools to identify bottlenecks before attempting to fix them.
+
+## 13. Anti-Patterns to Avoid
+
+❌ **Don't**:
+- Use `GenServer` for everything - most problems don't need state.
+- Create deep or complex module hierarchies - keep the structure flat and context-based.
+- Handle errors with `try/catch` - use pattern matching and result tuples.
+- Store business logic in controllers or LiveViews - put it in context modules.
+- Create "god" modules that do too much - split them by responsibility.
+- Ignore database indexes - query performance is critical.
+- Skip changesets for data validation - validate all external data.
+- Use atoms for user input - this can lead to atom table exhaustion.
+
+✅ **Do**:
+- Use simple functions and pattern matching as your default tools.
+- Keep modules focused and cohesive.
+- Handle errors explicitly with tagged tuples and `with` statements.
+- Put business logic in context modules.
+- Create focused, single-purpose modules.
+- Index database columns used in queries.
+- Validate all external data with changesets.
+- Use strings for user-provided data.
+
+## 14. Development Workflow
+
+### 14.1 Git Practices
+- **Feature Branches**: All changes should be made on a feature branch.
+- **Conventional Commits**: Use conventional commit messages for a clear and readable history.
+- **Small, Focused Commits**: Commits should be atomic and represent a single logical change.
+- **Rebase for Clean History**: Rebase your feature branch on the main branch before merging to maintain a clean, linear history.
+
+### 14.2 Deployment Pipeline
+- **Tests Must Pass**: All tests must pass before code can be merged.
+- **Code Coverage**: Maintain or improve code coverage with every change.
+- **Staging Environment**: Test database migrations and complex changes in a staging environment before deploying to production.
+- **Zero-Downtime Deployments**: Aim for zero-downtime deployments when possible.
+---
+
+Remember: **Simplicity is the ultimate sophistication**. Build the simplest thing that works, then evolve it based on real needs, not imagined requirements. 

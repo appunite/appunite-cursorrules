@@ -1,0 +1,188 @@
+---
+description: 
+globs: *.ex,*.exs
+alwaysApply: false
+---
+
+# Elixir Logger Usage and Configuration
+
+## **Logger Configuration Requirements**
+
+- **ALWAYS ensure Logger is configured to show metadata**
+- **NEVER leave metadata invisible in logs**
+
+### ✅ **DO: Proper Logger Configuration**
+
+In `config/config.exs`:
+```elixir
+# Show all metadata in logs for structured logging
+config :logger, :console,
+  format: "$time $metadata[$level] $message\n",
+  metadata: :all
+
+# For production, you might want to be more selective:
+config :logger, :console,
+  format: "$time $metadata[$level] $message\n", 
+  metadata: [:request_id, :user_id, :conversation_id, :operation, :duration_ms]
+```
+
+### ❌ **DON'T: Hide Important Metadata**
+
+```elixir
+# BAD: Only shows request_id, hides structured logging
+config :logger, :console,
+  format: "$time $metadata[$level] $message\n",
+  metadata: [:request_id]
+
+# BAD: No metadata shown at all
+config :logger, :console,
+  format: "$time [$level] $message\n"
+```
+
+## **Correct Logger Syntax**
+
+Both formats are valid in Elixir:
+
+### ✅ **DO: Both Are Correct**
+
+```elixir
+# Implicit keyword list (preferred for readability)
+Logger.info("User logged in", user_id: 123, ip: "192.168.1.1")
+
+# Explicit keyword list (also valid)
+Logger.info("User logged in", [user_id: 123, ip: "192.168.1.1"])
+
+# Multi-line for complex metadata
+Logger.error("Payment failed", [
+  user_id: user.id,
+  order_id: order.id,
+  amount: payment.amount,
+  reason: error_reason
+])
+```
+
+### **Expected Output (when configured correctly)**
+```
+13:45:12.123 user_id=123 ip=192.168.1.1 [info] User logged in
+13:45:13.456 user_id=456 order_id=789 amount=99.99 reason=card_declined [error] Payment failed
+```
+
+## **Structured Logging Best Practices**
+
+### **Metadata vs Message Content**
+- **Metadata**: Contextual identifiers for filtering and grouping logs
+- **Message**: Specific operational details and values
+
+### ✅ **DO: Proper Separation**
+
+```elixir
+# ✅ GOOD: Identifiers in metadata, details in message
+Logger.info("Payment processed for $#{amount} via #{method}", [
+  user_id: user.id,
+  order_id: order.id
+])
+
+Logger.error("API request failed with status #{status}: #{error_message}", [
+  conversation_id: context.conversation_id,
+  user_id: user.id
+])
+
+Logger.debug("Database query completed in #{duration}ms returning #{count} records", [
+  table: :users,
+  user_id: current_user.id
+])
+```
+
+### ❌ **DON'T: Mix Identifiers and Values**
+
+```elixir
+# ❌ BAD: Operational details in metadata
+Logger.info("Payment processed", [
+  user_id: user.id,
+  order_id: order.id,
+  amount: 99.99,
+  payment_method: "credit_card",
+  processing_time_ms: 450
+])
+
+# ❌ BAD: Missing important context identifiers
+Logger.error("Database query failed", [
+  duration_ms: 5000,
+  row_count: 0
+])
+```
+
+### **Metadata Guidelines**
+- **Always include**: `conversation_id`, `user_id`, `request_id`, `session_id`
+- **For errors**: `error_code`, `service_name`, `operation_type`
+- **For requests**: `method`, `endpoint`, `user_agent`
+- **Keep contextual**: Information useful for filtering and correlation
+
+### **Message Guidelines**
+- **Include specific values**: amounts, counts, durations, statuses
+- **Be descriptive**: "User login successful" vs "User authenticated"
+- **Include dynamic data**: "Processed 150 orders in 2.3s"
+- **Use interpolation**: "#{action} completed for #{resource}"
+
+## **Environment-Specific Configuration**
+
+```elixir
+# config/dev.exs - Show all metadata for debugging
+config :logger, :console,
+  format: "$time $metadata[$level] $message\n",
+  metadata: :all
+
+# config/prod.exs - Show only important metadata for performance
+config :logger, :console,
+  format: "$time $metadata[$level] $message\n",
+  metadata: [:request_id, :user_id, :conversation_id, :error_code]
+```
+
+## **Common Patterns**
+
+```elixir
+# API operations
+Logger.info("API #{method} #{path} completed with status #{status} in #{duration}ms", [
+  user_id: current_user.id,
+  request_id: request_id,
+  method: method,
+  endpoint: path
+])
+
+# Database operations  
+Logger.debug("#{operation} query on #{table} completed in #{duration}ms returning #{count} records", [
+  table: table,
+  operation: operation,
+  user_id: current_user.id
+])
+
+# Error handling
+Logger.error("#{service} service unavailable: #{inspect(error)}", [
+  service: service,
+  user_id: user.id,
+  request_id: request_id,
+  retry_count: retry_count
+])
+
+# Business logic
+Logger.info("Order #{order_id} processed successfully for $#{total} via #{payment_method}", [
+  order_id: order.id,
+  user_id: order.user_id,
+  request_id: request_id
+])
+
+# Conversation/Chat specific
+Logger.info("Message sent successfully with #{response_length} character response", [
+  conversation_id: conversation.id,
+  user_id: user.id
+])
+
+Logger.error("Conversation creation failed: #{inspect(reason)}", [
+  output_type: output_type,
+  user_id: user.id
+])
+```
+
+## **Testing Logger Configuration**
+
+```

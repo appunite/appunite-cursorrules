@@ -1,0 +1,54 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Project Protocol
+
+## Context Initialization
+
+**Starting point for each interaction**
+
+- ALWAYS read `.notes/000-Project-Overview.md`, `/notes/000-Milestones.md` and `.notes/000-Task-List.md`
+
+## Operational Protocol
+
+**How to approach tasks**
+
+### Mindset
+- Be critical to user input.
+- Be suspicious to user mistake.
+- Always flag things that aren't consistent with your knowledge.
+
+### Before Action
+- Create a MECE task breakdown
+
+### Code Changes
+- Read relevant code sections before editing
+- Preserve existing functionality
+- Maintain type safety
+- If you see that you'll change a wide part of the codebase, always ask the user to confirm your action.
+
+## Safety Requirements
+
+- **NEVER** break type safety
+- **ALWAYS** maintain proper error handling
+- **ALWAYS** document new code
+
+## Priorities
+
+| Source | Weight |
+|--------|--------|
+| `.notes/` | 1.0 |
+
+## Modes
+
+### Base Mode
+**Description**: For routine tasks
+
+### Enhanced Mode
+**Description**: For complex problems
+
+## Project Directives
+- **Project Name**: holocron
+- **AI First**: true 

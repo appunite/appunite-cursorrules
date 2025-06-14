@@ -1,0 +1,350 @@
+---
+description: 
+globs: *.ex
+alwaysApply: false
+---
+# Official LiveReact Implementation Guidelines
+
+**Reference**: @LiveReact Documentation
+
+## Core Principles
+
+- **Official Package Only**: Use `{:live_react, "~> 1.0"}` from Hex.pm, not unofficial forks
+- **Component Syntax**: Use `<.react>` component syntax with assigns as attributes
+- **Props as Data Bridge**: Pass LiveView assigns as React props for seamless integration
+- **Event Callbacks**: Use LiveReact event callbacks to communicate from React back to LiveView
+- **Component Registration**: Register React components globally in window scope
+
+## Required Setup
+
+### Elixir Dependencies
+```elixir
+# ✅ DO: Use official LiveReact package from Hex.pm
+defp deps do
+  [
+    {:live_react, "~> 1.0"},  # Official package version 1.0.1
+    # ... other deps
+  ]
+end
+```
+
+❌ **Don't use**:
+```elixir
+# ❌ DON'T: Use unofficial forks
+{:live_react, github: "mrdotb/live_react", branch: "main"}
+```
+
+### JavaScript Dependencies
+```json
+// ✅ DO: Use file reference to deps
+{
+  "dependencies": {
+    "live_react": "file:../../../deps/live_react",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
+}
+```
+
+❌ **Don't use**:
+```json
+// ❌ DON'T: Use unofficial npm packages
+{
+  "dependencies": {
+    "@mrdotb/live-react": "^0.2.1-beta"  // Remove this
+  }
+}
+```
+
+### Asset Pipeline Configuration
+```javascript
+// ✅ DO: Import official LiveReact getHooks function
+import { getHooks } from "live_react"
+import components from "./components"  // Your React components
+
+let liveSocket = new LiveSocket("/live", Socket, {
+  params: {_csrf_token: csrfToken},
+  hooks: {
+    ...getHooks(components)  // Pass components to getHooks
+  }
+})
+```
+
+❌ **Don't use**:
+```javascript
+// ❌ DON'T: Use unofficial import or old API
+import { getHooks } from "@mrdotb/live-react"
+import LiveReact from "live_react"  // This is not the correct API
+```
+
+### Component Registration
+```javascript
+// ✅ DO: Export components for LiveReact registration
+// In your components/index.js
+import { MyComponent } from "./MyComponent"
+import RFPGenerator from "./RFPGenerator"
+
+export default {
+  MyComponent,
+  RFPGenerator,
+}
+```
+
+## LiveView Implementation
+
+### Import and Usage
+```elixir
+# ✅ DO: Always import LiveReact in LiveView modules
+defmodule MyAppWeb.SomeLive do
+  use MyAppWeb, :live_view
+  import LiveReact  # Required import
+  
+  def render(assigns) do
+    ~H"""
+    <.react name="ComponentName" prop1={@value1} prop2={@value2} />
+    """
+  end
+end
+```
+
+### Official API Usage
+```elixir
+# ✅ DO: Use .react component syntax with assigns as attributes
+~H"""
+<.react
+  name="RFPGenerator"
+  id="rfp-generator"
+  initialMessages={@messages}
+  isTyping={@typing}
+  streamingContent={@stream_buffer}
+  streamingState={@streaming_state}
+  rfpData={@rfp_data}
+/>
+"""
+```
+
+❌ **Don't use function call syntax**:
+```elixir
+# ❌ DON'T: This is not the official API
+~H"""
+<%= react("RFPGenerator", %{prop1: @value1}) %>
+"""
+```
+
+### Event Handling
+```elixir
+# ✅ DO: Define event callbacks as attributes
+~H"""
+<.react
+  name="MyComponent"
+  onSendMessage={%{name: "send_message"}}
+  onUpdateData={%{name: "update_data"}}
+  onExportData={%{name: "export_data"}}
+  data={@some_data}
+/>
+"""
+
+# ✅ DO: Handle events in LiveView with proper pattern matching
+@impl true
+def handle_event("send_message", %{"message" => message}, socket) do
+  # Process the message
+  {:noreply, updated_socket}
+end
+```
+
+### Data Structure Patterns
+```elixir
+# ✅ DO: Structure complex data as maps for React consumption
+def render(assigns) do
+  ~H"""
+  <.react
+    name="ProgressTracker"
+    projectProgress={%{
+      currentStep: @current_step,
+      sections: @rfp_sections,
+      projectName: @project_name,
+      completionPercentage: calculate_completion_percentage(@rfp_sections),
+      completedSections: count_completed_sections(@rfp_sections),
+      totalSections: length(@rfp_sections),
+      recentActivity: [
+        %{action: "Updated Requirements section", time: "5 minutes ago"}
+      ]
+    }}
+  />
+  """
+end
+```
+
+## State Management Patterns
+
+### Real-time Updates
+```elixir
+# ✅ DO: Use LiveView for streaming and real-time state
+@impl true
+def handle_info({:stream_event, :chunk_received, data}, socket) do
+  content = data.message || ""
+  new_buffer = socket.assigns.stream_buffer <> content
+  
+  socket = assign(socket, 
+    stream_buffer: new_buffer, 
+    streaming_state: :streaming
+  )
+  {:noreply, socket}
+end
+```
+
+### Component Re-rendering
+```elixir
+# ✅ DO: Force re-render when necessary for React component updates
+def mount(_params, _session, socket) do
+  # Initial state setup
+  initial_state = %{messages: [], typing: false}
+  
+  # Force re-render to ensure React gets initial data
+  Process.send_after(self(), :force_rerender, 100)
+  
+  {:ok, assign(socket, initial_state)}
+end
+
+@impl true
+def handle_info(:force_rerender, socket) do
+  {:noreply, socket}
+end
+```
+
+## Best Practices
+
+### Data Flow
+- **LiveView → React**: Use assigns passed as component attributes
+- **React → LiveView**: Use event callbacks with structured payloads
+- **Avoid**: Direct DOM manipulation from LiveView when React is handling the UI
+
+### Performance Considerations
+```elixir
+# ✅ DO: Calculate derived data efficiently
+defp calculate_completion_percentage(sections) do
+  completed = count_completed_sections(sections)
+  total = length(sections)
+  if total > 0, do: round(completed / total * 100), else: 0
+end
+
+# ✅ DO: Structure data before passing to React
+def render(assigns) do
+  # Pre-calculate complex data structures
+  derived_data = calculate_derived_data(assigns)
+  
+  ~H"""
+  <.react name="Component" data={derived_data} />
+  """
+end
+```
+
+### Error Handling
+```elixir
+# ✅ DO: Handle React component errors gracefully
+@impl true
+def handle_event(_unknown_event, _params, socket) do
+  # Log unknown events but don't crash
+  Logger.warn("Unknown event received: #{inspect(_unknown_event)}")
+  {:noreply, socket}
+end
+```
+
+## Anti-Patterns
+
+❌ **Don't**:
+- Use unofficial LiveReact forks like `@mrdotb/live-react`
+- Pass functions or PIDs as props (only serializable data)
+- Handle React-specific DOM events in LiveView
+- Use LiveView assigns directly in JavaScript (use props)
+- Create circular dependencies between React and LiveView state
+
+❌ **Avoid**:
+```elixir
+# Don't pass non-serializable data
+~H"""
+<.react
+  name="Component"
+  badProp={self()}  # PIDs don't serialize
+  badFunc={&my_function/1}  # Functions don't serialize
+/>
+"""
+
+# Don't handle React events without proper validation
+def handle_event("user_input", params, socket) do
+  # Missing validation can cause crashes
+  {:noreply, assign(socket, user_data: params["unsafe_data"])}
+end
+```
+
+✅ **Do**:
+```elixir
+# Serialize data properly and validate inputs
+~H"""
+<.react
+  name="Component"
+  userId={@current_user.id}  # Serializable data
+  config={%{theme: "dark", locale: "en"}}  # Structured maps
+/>
+"""
+
+def handle_event("user_input", params, socket) do
+  case validate_user_input(params) do
+    {:ok, validated_data} ->
+      {:noreply, assign(socket, user_data: validated_data)}
+    {:error, _} ->
+      {:noreply, socket}
+  end
+end
+```
+
+## React Component Integration
+
+### Component Props Structure
+```javascript
+// ✅ DO: Destructure props and handle callbacks properly
+function MyComponent({ 
+  initialMessages, 
+  isTyping, 
+  onSendMessage, 
+  onUpdateData 
+}) {
+  const handleSubmit = (data) => {
+    // Use the callback functions passed from LiveView
+    onSendMessage({ message: data.message })
+  }
+  
+  return (
+    <div>
+      {/* Component implementation */}
+    </div>
+  )
+}
+
+export default MyComponent
+```
+
+### Event Communication
+```javascript
+// ✅ DO: Use callback functions to communicate with LiveView
+const handleUserAction = (eventData) => {
+  if (onUpdateData && typeof onUpdateData === 'function') {
+    onUpdateData(eventData)
+  }
+}
+```
+
+## Migration from @mrdotb/live-react
+
+### Steps to Migrate:
+1. **Update mix.exs**: Change `{:live_react, github: "mrdotb/live_react"}` to `{:live_react, "~> 1.0"}`
+2. **Update package.json**: Remove `"@mrdotb/live-react"` dependency
+3. **Update app.js**: Change `import { getHooks } from "@mrdotb/live-react"` to `import { getHooks } from "live_react"`
+4. **Update LiveView templates**: Change `<%= react("...", %{}) %>` to `<.react name="..." />`
+5. **Run**: `mix deps.get && npm install` in assets directory
+
+## References
+
+- @Official LiveReact Documentation
+- @Phoenix LiveView Guide
+- See @rfp_generator_live.ex for implementation example
