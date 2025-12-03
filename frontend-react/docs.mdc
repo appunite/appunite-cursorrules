@@ -1,0 +1,8 @@
+---
+alwaysApply: true
+---
+
+- Each of the application's domains is documented under `docs/domains/`
+- Reflect the implemented changes (especially those regarding cross-domain flows) in the docs
+- Add documentation for new features in the domain's .md file
+- Prepare mermaid charts for complex flows

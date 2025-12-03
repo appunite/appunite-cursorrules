@@ -1,0 +1,36 @@
+# Tailwind CSS Best Practices
+
+## Always Use Tailwind CSS Instead of Standard CSS
+
+- **Prefer Tailwind utility classes** over custom CSS whenever possible
+- **Use Tailwind's design system** for consistent spacing, colors, and typography
+- **Avoid writing custom CSS** unless absolutely necessary for complex animations or third-party integrations
+- **Use Tailwind's responsive prefixes** (sm:, md:, lg:, xl:, 2xl:) for responsive design
+- **Leverage Tailwind's state variants** (hover:, focus:, active:, disabled:) for interactive states
+- **Use Tailwind's dark mode** (dark:) for theme switching
+- **Prefer Tailwind's color palette** over custom hex colors
+- **Use Tailwind's spacing scale** (p-4, m-2, space-x-4, etc.) for consistent layouts
+- **Utilize Tailwind's typography plugin** for rich text content when needed
+- **Use Tailwind's component extraction** (@apply) sparingly and only for repeated patterns
+
+## When Custom CSS is Acceptable
+
+- Complex animations that can't be achieved with Tailwind utilities
+- Third-party component library overrides
+- CSS Grid layouts that require specific grid template areas
+- Custom properties (CSS variables) for dynamic theming
+- Browser-specific hacks or workarounds
+
+## File Organization
+
+- Keep all Tailwind directives in `src/index.css`
+- Avoid creating separate CSS files for components
+- Use CSS modules only when absolutely necessary for scoped styles
+- Prefer Tailwind's utility-first approach over component-based CSS
+
+## Performance Considerations
+
+- Tailwind's purging will automatically remove unused styles
+- Use Tailwind's JIT mode for optimal build performance
+- Avoid using arbitrary values unless necessary
+- Prefer Tailwind's built-in utilities over custom CSS for better tree-shaking

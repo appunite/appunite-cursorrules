@@ -1,0 +1,9 @@
+---
+name: Env Variables
+description: Best practices for working with env variables
+globs: **/*.{ts,tsx,js,jsx}
+---
+
+When working with Env Variables which should be available on the frontend, always put them in the `src/env.ts` file and add them to envalid validation.
+
+Also be sure to put blank examples of all the env variables in the `.env.local.example` file.

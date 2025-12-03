@@ -1,0 +1,11 @@
+---
+name: react-best-practices.mdc
+description: Best practices for React applications
+globs: **/*.{ts,tsx,js,jsx}
+---
+
+- Use functional components and hooks for state management
+- Use TypeScript for type checking
+- Structure components for reusability and maintainability
+- When exporting components from files prefer to use named exports instead of default exports (so `export function App() {}` instead of `export default App`).
+- When adding multiple class names, having conditional statements inside the class strings, etc., use the `cn` utility from `@/ui/utils/cn.ts`

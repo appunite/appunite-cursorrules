@@ -1,0 +1,10 @@
+---
+name: react-refresh-best-practices.mdc
+description: Best practices for using React Refresh
+globs: **/*.{ts,tsx,js,jsx}
+---
+
+- Enable React Refresh for a better development experience
+- Ensure that components are properly wrapped for hot reloading
+- Test the refresh functionality regularly to catch issues early
+- Use in conjunction with Vite for optimal performance during development

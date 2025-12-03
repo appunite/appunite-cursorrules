@@ -1,0 +1,25 @@
+---
+description: This rule explains the guidelines for writing Vitest tests.
+alwaysApply: true
+---
+
+# Testing Guidelines
+
+## Testing Framework
+
+- `vitest` is used for testing
+- Tests are colocated next to the tested file in the `__tests__` subfolder
+  - Example: `dir/format.ts` and `dir/__tests__/format.test.ts`
+- For running tests use `bun run test` script (and you can also pass the file path to run a particular file) - it's different than `bun test`!
+- Import test utilities into the test files from `vitest`, not `bun:test`!
+- When running tests in agent mode, add `--run` argument to the test command so it doens't start in watch mode
+
+## Best Practices
+
+- Add tests for newly created code / functions / components containing logic
+- Each test should be independent
+- Use descriptive test names
+- Mock external dependencies using `vi.mock`
+- Clean up mocks between tests
+- Avoid testing implementation details
+- If doing changes in some file/function, update its tests to match the changes. You can also update the tests first and take advantage of TDD

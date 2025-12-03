@@ -1,0 +1,18 @@
+---
+name: Architectural guidelines
+globs: **/*.{ts,tsx,js,jsx}
+---
+
+- Divide the app's architecture into logical domains (like `auth`, `search`, `library`, `graph`, etc.), based on the functionalities and parts of the UI they're responsible for
+- When retrieving data from the API, put the API calls in the domain-specific `endpoints.ts` file
+- Default to using the generated OpenAPI schemas, if some types are not available/incorrect, only then define the API types manually
+- IMPORTANT: All the entities/values/schemas we use in the app should be described with zod schemas in the domain-specific `values/` folder
+- IMPORTANT: All the data coming from the API, before it's used in any hooks or components, should be parsed and validated to the Zod schemas in the services defined in the domain-specific `services/` folder
+- The API uses snake_case casing, but in the internal in-app schemas we rather use camelCase
+- Logic should rather be defined in hooks and services, components shouldn't contain any important logic (especially when it's ie. some coordinated actions pushing to the stores etc.)
+- There can be global stores defined with Zustand for the domain-specific data
+- In the global state keep only the data needed in the global state
+- Always fetch the data with react-query
+- Avoid circular dependencies between different domains
+- Write tests when there's more logic
+- Always opt for consistency with the rest of the codebase when creating something new

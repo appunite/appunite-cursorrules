@@ -1,0 +1,9 @@
+---
+alwaysApply: true
+---
+
+- Don't overly comment code, use comments only in non-standard situations
+- Split large components or functions into smaller ones
+- Split the code into different logic domains, like `auth`, `ui`, `dataDirectory`, etc.
+- Prefer functional over object-oriented approach
+- Don't re-export values from files in directories with `index.ts` files, just import things directly
