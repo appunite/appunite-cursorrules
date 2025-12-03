@@ -1,0 +1,10 @@
+---
+name: globals-best-practices.mdc
+description: Best practices for managing global variables
+globs: **/*.{ts,tsx,js,jsx}
+---
+
+- Limit the use of global variables to avoid conflicts
+- Use namespaces or modules to encapsulate global variables
+- Document global variables clearly for team awareness
+- Regularly review and refactor global variables to maintain clean code

@@ -1,0 +1,35 @@
+---
+name: Prefer direct imports
+globs: **/*.{ts,tsx,js,jsx}
+---
+
+# No Re-exports Rule
+
+## Overview
+Avoid creating index.ts files that re-export from other modules. Use direct imports instead.
+
+## Why
+- Re-export files create unnecessary indirection
+- Direct imports are clearer about dependencies
+- Easier to track where code comes from
+- Reduces bundle size and complexity
+
+## What to do instead
+```typescript
+// ❌ Don't create index.ts files like this:
+// src/api/index.ts
+export { getHealthCheck } from './functions'
+export { get } from './client'
+
+// ❌ Don't import from index files:
+import { getHealthCheck } from './api'
+
+// ✅ Use direct imports:
+import { getHealthCheck } from './api/functions'
+import { get } from './api/client'
+```
+
+## Exceptions
+- Only create index.ts for actual barrel exports when absolutely necessary
+- Library entry points are acceptable
+- Main application entry points (main.tsx, App.tsx) are acceptable

@@ -1,0 +1,10 @@
+---
+name: react-hooks-best-practices.mdc
+description: Best practices for using React Hooks
+globs: **/*.{ts,tsx,js,jsx}
+---
+
+- Use hooks at the top level of your components
+- Avoid using hooks inside loops, conditions, or nested functions
+- Create custom hooks for reusable logic
+- Use the `useEffect` hook wisely to manage side effects

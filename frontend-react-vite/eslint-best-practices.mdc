@@ -1,0 +1,10 @@
+---
+name: eslint-best-practices.mdc
+description: Best practices for ESLint configuration and usage
+globs: **/*.{ts,tsx,js,jsx}
+---
+
+- Use ESLint with TypeScript for type-aware linting
+- Configure rules to enforce coding standards and best practices
+- Integrate Prettier for consistent code formatting
+- Regularly run linting as part of the development process

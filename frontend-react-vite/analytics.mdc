@@ -1,0 +1,7 @@
+---
+name: analytics.mdc
+description: Practices related to capturing user events / activity
+globs: **/*.{ts,tsx,js,jsx}
+---
+
+Use posthog for analytics, if an event is being triggered by a user, call `Posthog.capture()`
